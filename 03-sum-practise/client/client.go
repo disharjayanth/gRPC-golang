@@ -10,7 +10,12 @@ import (
 
 func main() {
 	conn, err := grpc.Dial("localhost:50051", grpc.WithInsecure())
-	defer conn.Close()
+	defer func() {
+		if err := conn.Close(); err != nil {
+			log.Fatalf("Error closing client connection: %v", err)
+		}
+	}()
+
 	if err != nil {
 		log.Fatalf("Error dailing server: %v", err)
 	}
