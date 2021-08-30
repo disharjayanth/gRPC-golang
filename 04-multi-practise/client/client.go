@@ -12,7 +12,7 @@ import (
 func main() {
 	conn, err := grpc.Dial("localhost:50051", grpc.WithInsecure())
 	if err != nil {
-		fmt.Println("Failed to created connection at right target: %v", err)
+		fmt.Printf("Failed to created connection at right target: %v", err)
 	}
 
 	client := multipb.NewMultiplyServiceClient(conn)
