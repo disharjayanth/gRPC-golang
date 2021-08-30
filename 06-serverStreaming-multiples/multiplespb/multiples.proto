@@ -1,0 +1,17 @@
+syntax = "proto3";
+
+package multiplespb;
+
+option go_package = "/multiplespb";
+
+message MultiplesRequest {
+    int32 num = 1;
+}
+
+message MultiplesResponse {
+    int32 nums = 2;
+}
+
+service MultiplesService {
+    rpc Multiples(MultiplesRequest) returns (stream MultiplesResponse) {};
+}
