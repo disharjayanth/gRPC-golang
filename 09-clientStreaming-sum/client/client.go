@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"time"
 
@@ -27,12 +28,15 @@ func main() {
 		req := &sumpb.SumRequest{
 			Num: num,
 		}
+		fmt.Println("Sending num: ", num)
 		clientStream.Send(req)
 		time.Sleep(1 * time.Second)
 	}
 
-	err = clientStream.CloseSend()
+	res, err := clientStream.CloseAndRecv()
 	if err != nil {
-		log.Fatalf("Failed to close client stream: %v", err)
+		log.Fatalf("Server response server: %v", err)
 	}
+
+	fmt.Printf("Response from server: %v", res.GetResult())
 }
