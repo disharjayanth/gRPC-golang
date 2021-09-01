@@ -1,0 +1,17 @@
+syntax = "proto3";
+
+package doublepb;
+
+option go_package = "/doublepb";
+
+message DoubleRequest {
+    int32 num = 1;
+}
+
+message DoubleResponse {
+    int32 result = 1;
+}
+
+service DoubleService {
+    rpc Double(stream DoubleRequest) returns (stream DoubleResponse) {};
+}
