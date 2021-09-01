@@ -1,0 +1,17 @@
+syntax = "proto3";
+
+package upperpb;
+
+option go_package = "/upperpb";
+
+message UpperRequest {
+    string str = 1;
+}
+
+message UpperResponse {
+    string upperStr = 1;
+}
+
+service UpperService {
+    rpc Upper(stream UpperRequest) returns (UpperResponse) {};
+}
