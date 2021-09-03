@@ -1,0 +1,18 @@
+syntax = "proto3";
+
+package sqroot;
+
+option go_package = "/sqrootpb";
+
+message SquareRootRequest {
+    int32 num = 1;
+}
+
+message SquareRootResponse {
+    double result = 1;
+}
+
+service SquareRootService {
+    // SquareRoot rpc will send exeption if sent number is negative
+    rpc SquareRoot(SquareRootRequest) returns (SquareRootResponse) {}; 
+}
