@@ -9,6 +9,7 @@ import (
 	"github.com/disharjayanth/gRPC-golang/tree/main/16-deadlines/greetpb"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/status"
 )
 
@@ -40,7 +41,13 @@ func main() {
 		log.Fatalf("Failed to create tcp listener: %v", err)
 	}
 
-	grpcServer := grpc.NewServer()
+	certFile := "ssl/server.crt"
+	keyFile := "ssl/server.pem"
+	creds, err := credentials.NewServerTLSFromFile(certFile, keyFile)
+	if err != nil {
+		log.Fatalf("Failed to load certificate: %v", err)
+	}
+	grpcServer := grpc.NewServer(grpc.Creds(creds))
 
 	greetpb.RegisterGreetDeadlineServiceServer(grpcServer, &server{})
 

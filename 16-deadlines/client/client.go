@@ -9,11 +9,14 @@ import (
 	"github.com/disharjayanth/gRPC-golang/tree/main/16-deadlines/greetpb"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/status"
 )
 
 func main() {
-	conn, err := grpc.Dial("localhost:50051", grpc.WithInsecure())
+	certFile := "ssl/ca.crt" // Certificate authority Trust Certificate
+	creds, _ := credentials.NewClientTLSFromFile(certFile, "")
+	conn, err := grpc.Dial("localhost:50051", grpc.WithTransportCredentials(creds))
 	if err != nil {
 		log.Fatalln("Error dailing client @port:50051", err)
 	}
