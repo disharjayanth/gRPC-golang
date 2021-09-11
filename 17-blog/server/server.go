@@ -10,24 +10,54 @@ import (
 	"time"
 
 	"github.com/disharjayanth/gRPC-golang/tree/main/17-blog/blogpb"
-	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 var collection *mongo.Collection
+
+type blogItem struct {
+	ID       primitive.ObjectID `bson:"_id,omitempty"`
+	AuthorID string             `bson:"author_id"`
+	Title    string             `bson:"title"`
+	Content  string             `bson:"content"`
+}
 
 type server struct {
 	blogpb.UnimplementedBlogServiceServer
 }
 
-type blogItem struct {
-	ID       primitive.ObjectID `bson:"_id",omitempty`
-	AuthorID string             `bson:"author_id"`
-	Title    string             `bson:"title"`
-	Content  string             `bson:"content"`
+func (s *server) CreateBlog(ctx context.Context, req *blogpb.CreateBlogRequest) (*blogpb.CreateBlogResponse, error) {
+	blog := req.GetBlog()
+
+	blogData := blogItem{
+		AuthorID: blog.GetAuthorId(),
+		Title:    blog.GetTitle(),
+		Content:  blog.GetContent(),
+	}
+
+	res, err := collection.InsertOne(context.Background(), blogData)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, fmt.Sprintf("Internal error while inserting blog: %v", err))
+	}
+
+	oid, ok := res.InsertedID.(primitive.ObjectID)
+	if !ok {
+		return nil, status.Errorf(codes.Internal, fmt.Sprintf("Cannot convert to OID"))
+	}
+
+	return &blogpb.CreateBlogResponse{
+		Blog: &blogpb.Blog{
+			Id:       oid.Hex(),
+			AuthorId: blog.GetAuthorId(),
+			Title:    blog.GetTitle(),
+			Content:  blog.GetContent(),
+		},
+	}, nil
 }
 
 func main() {
@@ -42,7 +72,8 @@ func main() {
 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
-	log.Println("Connecting to mong client")
+
+	log.Println("Connecting to mongo client")
 	err = client.Connect(ctx)
 	if err != nil {
 		log.Fatalf("Cannot connect client to server: %v", err)
@@ -51,13 +82,6 @@ func main() {
 
 	collection = client.Database("blogDB").Collection("blog")
 	fmt.Println("Collection:", collection)
-
-	databases, err := client.ListDatabaseNames(ctx, bson.M{})
-	if err != nil {
-		log.Fatalf("Error fetching databases names: %v", err)
-	}
-
-	fmt.Println("Databases: ", databases)
 
 	// tcp listener for grpc server
 	lis, err := net.Listen("tcp", "localhost:50051")
@@ -84,5 +108,5 @@ func main() {
 	grpcServer.Stop()
 	log.Println("Stopping tcp listener")
 	lis.Close()
-	log.Println("Server completly stopped.")
+	log.Println("Server completely stopped.")
 }
