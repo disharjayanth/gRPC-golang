@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/disharjayanth/gRPC-golang/tree/main/17-blog/blogpb"
+	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
@@ -47,7 +48,7 @@ func (s *server) CreateBlog(ctx context.Context, req *blogpb.CreateBlogRequest) 
 
 	oid, ok := res.InsertedID.(primitive.ObjectID)
 	if !ok {
-		return nil, status.Errorf(codes.Internal, fmt.Sprintf("Cannot convert to OID"))
+		return nil, status.Errorf(codes.Internal, fmt.Sprint("Cannot convert to OID"))
 	}
 
 	return &blogpb.CreateBlogResponse{
@@ -60,11 +61,36 @@ func (s *server) CreateBlog(ctx context.Context, req *blogpb.CreateBlogRequest) 
 	}, nil
 }
 
+func (s *server) ReadBlog(ctx context.Context, req *blogpb.ReadBlogRequest) (*blogpb.ReadBlogResponse, error) {
+	blogId := req.GetBlogId()
+	oid, err := primitive.ObjectIDFromHex(blogId)
+	if err != nil {
+		return nil, status.Errorf(codes.InvalidArgument, fmt.Sprintf("Cannot parse given blog id: %v", err))
+	}
+
+	data := &blogItem{}
+	filter := bson.M{"_id": oid}
+
+	err = collection.FindOne(context.Background(), filter).Decode(data)
+	if err != nil {
+		return nil, status.Errorf(codes.NotFound, fmt.Sprintf("Cannot find blog with given id: %v", err))
+	}
+
+	return &blogpb.ReadBlogResponse{
+		Blog: &blogpb.Blog{
+			Id:       data.ID.String(),
+			AuthorId: data.AuthorID,
+			Title:    data.Title,
+			Content:  data.Content,
+		},
+	}, nil
+}
+
 func main() {
 	// if go code crashes, it prints file name and also line number
 	log.SetFlags(log.LstdFlags | log.Lshortfile)
 
-	// mongo client to mongo server
+	// mongo client connecting to mongo server
 	client, err := mongo.NewClient(options.Client().ApplyURI("mongodb+srv://user:user@cluster0.0yfhp.mongodb.net/myFirstDatabase?retryWrites=true&w=majority"))
 	if err != nil {
 		log.Fatalf("Cannot create new client connection to mongo server: %v", err)
