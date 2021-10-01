@@ -86,6 +86,37 @@ func (s *server) ReadBlog(ctx context.Context, req *blogpb.ReadBlogRequest) (*bl
 	}, nil
 }
 
+func (s *server) UpdateBlog(ctx context.Context, req *blogpb.UpdateBlogRequest) (*blogpb.UpdateBlogResponse, error) {
+	blogId := req.GetBlog().GetId()
+	blog := req.GetBlog()
+	oid, err := primitive.ObjectIDFromHex(blogId)
+	if err != nil {
+		return nil, status.Errorf(codes.InvalidArgument, fmt.Sprintf("Cannot parse given blog id: %v", err))
+	}
+
+	data := &blogItem{}
+	filter := bson.D{{Key: "_id", Value: oid}}
+
+	update := bson.D{
+		{Key: "$set", Value: bson.D{{Key: "title", Value: blog.GetTitle()}}},
+		{Key: "$set", Value: bson.D{{Key: "content", Value: blog.GetContent()}}},
+		{Key: "$set", Value: bson.D{{Key: "author_id", Value: blog.GetAuthorId()}}},
+	}
+
+	if err := collection.FindOneAndUpdate(context.Background(), filter, update).Decode(&data); err != nil {
+		return nil, status.Errorf(codes.Internal, fmt.Sprintf("Error while updating: %v", err))
+	}
+
+	return &blogpb.UpdateBlogResponse{
+		Blog: &blogpb.Blog{
+			Id:       data.ID.Hex(),
+			AuthorId: data.AuthorID,
+			Title:    data.Title,
+			Content:  data.Content,
+		},
+	}, nil
+}
+
 func main() {
 	// if go code crashes, it prints file name and also line number
 	log.SetFlags(log.LstdFlags | log.Lshortfile)

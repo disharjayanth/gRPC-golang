@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"log"
 
 	"github.com/disharjayanth/gRPC-golang/tree/main/17-blog/blogpb"
@@ -31,16 +32,33 @@ func main() {
 
 	// log.Printf("Response: %v", createBlogRes)
 
-	req := &blogpb.ReadBlogRequest{
-		BlogId: "613cefd6caac717672d7304a",
+	// req := &blogpb.ReadBlogRequest{
+	// 	BlogId: "613cefd6caac717672d7304a",
+	// }
+
+	// res, err := client.ReadBlog(context.Background(), req)
+	// if err != nil {
+	// 	log.Printf("Error reading blog from server: %v", err)
+	// }
+
+	// if res != nil {
+	// 	log.Println("Read blog with id 613cefd6caac717672d7304b", res.Blog)
+	// }
+
+	// // update blog
+	updatingBlog := &blogpb.UpdateBlogRequest{
+		Blog: &blogpb.Blog{
+			Id:       "613cf016caac717672d7304c",
+			AuthorId: "2",
+			Title:    "Ta Ta bye bye!!!!",
+			Content:  "See you later",
+		},
 	}
 
-	res, err := client.ReadBlog(context.Background(), req)
+	updatedBlog, err := client.UpdateBlog(context.Background(), updatingBlog)
 	if err != nil {
-		log.Printf("Error reading blog from server: %v", err)
+		fmt.Printf("Error while updating: %v", err)
 	}
 
-	if res != nil {
-		log.Println("Read blog with id 613cefd6caac717672d7304b", res.Blog)
-	}
+	fmt.Printf("Updated Blog: %v", *updatedBlog.GetBlog())
 }
